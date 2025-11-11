@@ -1,0 +1,958 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Menu, X } from 'lucide-react';
+
+/**
+ * EO ESSENTIALS – Full Single-File React SPA (Client-Side Pages)
+ *
+ * - Brand colors: Orange (#E8723D), Blue (#4A90A4)
+ * - Logo integrated in header (left, crisp, slightly cropped) and footer (larger, cropped, readable)
+ * - Orange bars above header content and above footer content
+ * - Navigation is client-side routing:
+ *      HOME, ABOUT, SERVICES, PROCESS, FAQ, CONTACT US
+ *      -> each shows its own page with corresponding sections
+ * - Home page shows full funnel (Hero, About Banner, About, Services, Process, FAQ, Lead, Contact, Newsletter)
+ * - Contact wording updated:
+ *      "Get In Touch" -> "Contact Us"
+ *      "Contact" nav labels -> "Contact Us" in header & footer
+ * - Lead & Contact forms: open mail client to send details to emmanuel.o@eoessentials.co
+ */
+
+// -----------------------------
+// Brand & Content
+// -----------------------------
+
+const BRAND = {
+  orange: '#E8723D',
+  blue: '#4A90A4',
+  darkOrange: '#D65A28',
+  lightOrange: '#FFF5F0',
+  darkBlue: '#3A7A8A',
+  lightBlue: '#E8F4F8',
+};
+
+const TAGLINES = [
+  'Making Everyday Brands Unforgettable.',
+  'Choose Smart. Choose Essentials.',
+  'Your Vision. Our Strategy. Unforgettable Results.',
+];
+
+const FAQ_CONTENT = [
+  {
+    q: 'What do you charge for your services?',
+    a: "We don't charge traditional fees like a marketing agency. Instead, we procure inventory directly from you, our valued partners, at a competitive price that allows us to earn our profits through the margins on each sale. This approach ensures that our success is directly tied to yours, creating a mutually beneficial partnership.",
+  },
+  {
+    q: "What's working with you like?",
+    a: "Working with us is another level. You'll find that we're not just a service provider; we become an extension of your team. We aim to understand your goals and work hand in hand to achieve them.",
+  },
+  {
+    q: 'What separates you from other online retailers?',
+    a: 'Most online retail agencies want to sell your product to cut their own slice. However, we believe in building a long-term partnership, helping you grow your brand as if it were our own.',
+  },
+  {
+    q: 'Can you only help with Amazon-related issues?',
+    a: 'No, our expertise allows us to help your brand well beyond the Amazon marketplace. Our ability to provide professional product images and marketing strategy can be applied across various online marketplaces. Not only do we provide you increased brand exposure and optimize your listings, but we also ensure your products rank when shoppers look for them.',
+  },
+  {
+    q: "I'm happy with my current online retailers; why should I consider you?",
+    a: "When the market is crowded, we often hear that you're satisfied with your existing partners. However, we can help you add additional revenue streams and increase your brand's visibility, providing new opportunities for growth.",
+  },
+  {
+    q: "I'm having difficulties with unauthorized sellers and MAP breakers; how can you help with that?",
+    a: 'This is one of the most common complaints from brands, and we are here to help. We can identify and eliminate these threats to your brand.',
+  },
+];
+
+const IMAGES = {
+  logo: 'https://i.ibb.co/MkDM861z/logo-pdf.jpg',
+  fallbackLogo:
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ3aGl0ZSIvPjx0ZXh0IHg9IjQwIiB5PSI3MiIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjQ4IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI0U4NzIzRCI+RU88L3RleHQ+PHRleHQgeD0iMTIwIiB5PSI3MiIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM2IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzRBOTBBNCI+RVNTRU5USUFMUzwvdGV4dD48L3N2Zz4=',
+  hero:
+    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=2000&q=80',
+  strategy:
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80',
+  advertising:
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+  brand:
+    'https://images.unsplash.com/photo-1551836022-4c4c79ecde51?auto=format&fit=crop&w=800&q=80',
+  marketplace:
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+  seo:
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+  customer:
+    'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=800&q=80',
+};
+
+// -----------------------------
+// Logo component (header + footer)
+// -----------------------------
+
+type LogoImgProps = {
+  crop?: boolean;
+  header?: boolean;
+  wrapperHeight?: number;
+  imageHeight?: number;
+};
+
+function LogoImg({ crop = false, header = false, wrapperHeight, imageHeight }: LogoImgProps) {
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const handledRef = useRef(false);
+
+  const baseWrapperHeight = header ? 120 : 80;
+  const baseImageHeight = header ? 110 : 95;
+
+  const wrapperStyle: React.CSSProperties = {
+    overflow: crop ? 'hidden' : 'visible',
+    height: wrapperHeight ?? baseWrapperHeight,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: header ? 'flex-start' : 'flex-start',
+  };
+
+  const imgStyle: React.CSSProperties = {
+    objectFit: crop ? 'cover' : 'contain',
+    objectPosition: 'center',
+    height: imageHeight ?? baseImageHeight,
+    width: 'auto',
+    display: 'block',
+  };
+
+  return (
+    <div style={wrapperStyle}>
+      <img
+        ref={imgRef}
+        src={IMAGES.logo}
+        alt="EO Essentials Logo"
+        style={imgStyle}
+        onError={() => {
+          if (handledRef.current) return;
+          handledRef.current = true;
+          if (imgRef.current) imgRef.current.src = IMAGES.fallbackLogo;
+        }}
+      />
+    </div>
+  );
+}
+
+// -----------------------------
+// Main App Component
+// -----------------------------
+
+export default function EOEssentialsFullSite() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [page, setPage] = useState<'home' | 'about' | 'services' | 'process' | 'faq' | 'contact'>('home');
+  const [tagIdx, setTagIdx] = useState(0);
+  const [fade, setFade] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    company: '',
+    message: '',
+  });
+  const [leadFormData, setLeadFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+  });
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [formStatus, setFormStatus] = useState('');
+  const [leadFormStatus, setLeadFormStatus] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState('');
+
+  // Rotating taglines
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(true);
+      const t = setTimeout(() => {
+        setTagIdx((p) => (p + 1) % TAGLINES.length);
+        setFade(false);
+      }, 250);
+      return () => clearTimeout(t);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const go = (next: typeof page) => {
+    setPage(next);
+    setIsMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleLeadFormChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setLeadFormData({ ...leadFormData, [e.target.name]: e.target.value });
+
+  // Contact form -> mailto
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const subject = encodeURIComponent('New Contact Request from EO Essentials Site');
+    const body = encodeURIComponent(
+      `Name: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nCompany: ${formData.company}\nMessage: ${formData.message}`
+    );
+    window.location.href = `mailto:emmanuel.o@eoessentials.co?subject=${subject}&body=${body}`;
+    setFormStatus('Thank you! Your email draft has been opened.');
+    setFormData({ name: '', phone: '', email: '', company: '', message: '' });
+    setTimeout(() => setFormStatus(''), 5000);
+  };
+
+  // Lead form -> mailto
+  const handleLeadFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const subject = encodeURIComponent('New Lead Capture from EO Essentials Site');
+    const body = encodeURIComponent(
+      `First Name: ${leadFormData.firstName}\nLast Name: ${leadFormData.lastName}\nEmail: ${leadFormData.email}`
+    );
+    window.location.href = `mailto:emmanuel.o@eoessentials.co?subject=${subject}&body=${body}`;
+    setLeadFormStatus('Thanks for your interest! Your email draft has been opened.');
+    setLeadFormData({ firstName: '', lastName: '', email: '' });
+    setTimeout(() => setLeadFormStatus(''), 5000);
+  };
+
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewsletterStatus('Successfully subscribed! (Demo only – connect a real provider in production.)');
+    setNewsletterEmail('');
+    setTimeout(() => setNewsletterStatus(''), 5000);
+  };
+
+  // -----------------------------
+  // Header (updated logo sizing)
+  // -----------------------------
+
+  const Header = () => (
+    <header className="relative bg-white shadow-md z-30">
+      {/* Orange line above content */}
+      <div
+        className="absolute top-0 left-0 right-0 h-1.5"
+        style={{ backgroundColor: BRAND.orange, zIndex: 40 }}
+      />
+
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pt-4 pb-4 relative z-30">
+        {/* Logo: larger, crisp, left-aligned, light crop */}
+        <button
+          onClick={() => go('home')}
+          className="flex items-center hover:opacity-90 transition-opacity"
+        >
+          <LogoImg header wrapperHeight={140} imageHeight={120} />
+        </button>
+
+        {/* Desktop Nav */}
+        <nav
+          className="hidden md:flex items-center space-x-6 font-semibold"
+          style={{ color: BRAND.orange }}
+        >
+          <button onClick={() => go('home')} className="hover:text-orange-500 transition-colors">
+            HOME
+          </button>
+          <button onClick={() => go('about')} className="hover:text-orange-500 transition-colors">
+            ABOUT
+          </button>
+          <button onClick={() => go('services')} className="hover:text-orange-500 transition-colors">
+            SERVICES
+          </button>
+          <button onClick={() => go('process')} className="hover:text-orange-500 transition-colors">
+            PROCESS
+          </button>
+          <button onClick={() => go('faq')} className="hover:text-orange-500 transition-colors">
+            FAQ
+          </button>
+          <button
+            onClick={() => go('contact')}
+            className="px-4 py-2 rounded text-white"
+            style={{ backgroundColor: BRAND.blue }}
+          >
+            CONTACT US
+          </button>
+        </nav>
+
+        {/* Mobile menu toggle */}
+        <button
+          className="md:hidden p-2"
+          style={{ color: BRAND.orange }}
+          onClick={() => setIsMenuOpen((v) => !v)}
+        >
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Orange line below header content */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-1.5"
+        style={{ backgroundColor: BRAND.orange, zIndex: 40 }}
+      />
+
+      {/* Mobile Nav */}
+      {isMenuOpen && (
+        <div
+          className="md:hidden bg-white border-t"
+          style={{ borderColor: BRAND.lightOrange, zIndex: 20 }}
+        >
+          <div
+            className="px-4 py-3 flex flex-col space-y-2 font-semibold"
+            style={{ color: BRAND.orange }}
+          >
+            <button onClick={() => go('home')}>HOME</button>
+            <button onClick={() => go('about')}>ABOUT</button>
+            <button onClick={() => go('services')}>SERVICES</button>
+            <button onClick={() => go('process')}>PROCESS</button>
+            <button onClick={() => go('faq')}>FAQ</button>
+            <button onClick={() => go('contact')}>CONTACT US</button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+
+  // -----------------------------
+  // Sections
+  // -----------------------------
+
+  const Hero = () => (
+    <section
+      id="home"
+      className="relative min-h-screen flex items-center justify-center pt-24"
+      style={{
+        background: `linear-gradient(135deg, rgba(232,114,61,0.92), rgba(74,144,164,0.92)), url(${IMAGES.hero})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
+      <div className="max-w-5xl mx-auto px-4 text-center">
+        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight tracking-wide min-h-[120px]">
+          <span
+            className={`inline-block transition-opacity duration-300 ${
+              fade ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            {TAGLINES[tagIdx]}
+          </span>
+        </h2>
+        <p className="text-xl md:text-2xl text-white mb-12 max-w-3xl mx-auto leading-relaxed">
+          Our success is shared as we reshape the experience through meaningful engagement with the Amazon
+          marketplace—expanding visibility, driving sales, providing logistics and great service, and building
+          lasting brand recognition together.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            onClick={() => go('about')}
+            className="px-8 py-4 bg-transparent text-white font-semibold rounded border-2 border-white hover:bg-white hover:text-orange-600 transition-all text-lg"
+          >
+            LEARN MORE
+          </button>
+          <button
+            onClick={() => go('contact')}
+            className="px-8 py-4 bg-white font-semibold rounded border-2 border-white hover:bg-opacity-90 transition-all text-lg"
+            style={{ color: BRAND.orange }}
+          >
+            CONTACT US
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+
+  const AboutBanner = () => (
+    <section
+      className="py-8"
+      style={{ backgroundColor: BRAND.lightOrange }}
+    />
+  );
+
+  const About = () => (
+    <section
+      id="about"
+      className="py-20"
+      style={{ backgroundColor: BRAND.lightOrange }}
+    >
+      <div className="max-w-4xl mx-auto px-4 text-center">
+        <h2
+          className="text-4xl md:text-5xl font-bold mb-8"
+          style={{ color: BRAND.orange }}
+        >
+          About Us
+        </h2>
+        <p className="text-lg md:text-xl text-gray-800 leading-relaxed mb-4">
+          We&apos;re a team of hardworking people who understand the realities of selling online. We solve problems,
+          find opportunities, and help brands realize their potential through consistent execution.
+        </p>
+        <p
+          className="text-2xl font-semibold mb-3"
+          style={{ color: BRAND.blue }}
+        >
+          <em>THE PARTNER YOU NEED FOR LASTING MARKETPLACE SUCCESS.</em>
+        </p>
+        <p
+          className="text-lg md:text-xl font-semibold"
+          style={{ color: BRAND.blue }}
+        >
+          Let&apos;s make it happen.
+        </p>
+      </div>
+    </section>
+  );
+
+  const ServicesSection = () => {
+    const services = [
+      {
+        img: IMAGES.strategy,
+        title: 'STRATEGY',
+        desc: "Whether you're launching a new product or scaling an existing line, we'll map the channels, pricing, and promotions that fit your goals—and build a plan you can actually run.",
+      },
+      {
+        img: IMAGES.advertising,
+        title: 'ADVERTISING',
+        desc: 'Smart, targeted campaigns that tie spend to outcomes. From Sponsored Products/Brands/Display to creative testing, we focus on profitable, steady growth.',
+      },
+      {
+        img: IMAGES.brand,
+        title: 'BRAND AWARENESS',
+        desc: 'We make your brand easy to find and hard to forget—retail-ready content, A+ pages, and store updates that build recognition and repeat purchase.',
+      },
+      {
+        img: IMAGES.marketplace,
+        title: 'MARKETPLACE SOLUTIONS',
+        desc: "Catalog setup and clean-up, variation hygiene, content refreshes, FBA/3PL coordination, and reporting you'll actually use.",
+      },
+      {
+        img: IMAGES.seo,
+        title: 'SEO',
+        desc: 'Keyword research and on-page improvements that lift organic rank—and complement your ads instead of fighting them.',
+      },
+      {
+        img: IMAGES.customer,
+        title: 'CUSTOMER EXPERIENCE',
+        desc: 'Reviews, post-purchase touchpoints, and loyalty ideas that turn first-time buyers into repeat customers.',
+      },
+    ];
+
+    return (
+      <section id="services" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2
+            className="text-4xl md:text-5xl font-bold text-center mb-16"
+            style={{ color: BRAND.orange }}
+          >
+            Our Services
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {services.map((s, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
+              >
+                <div className="relative overflow-hidden">
+                  <img
+                    src={s.img}
+                    alt={s.title}
+                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <div className="p-6">
+                  <h3
+                    className="text-2xl font-bold mb-3"
+                    style={{ color: BRAND.orange }}
+                  >
+                    {s.title}
+                  </h3>
+                  <p className="text-gray-700">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  const ProcessSection = () => (
+    <section
+      id="process"
+      className="py-20 relative"
+      style={{
+        background: `linear-gradient(135deg, ${BRAND.darkBlue}, ${BRAND.orange})`,
+      }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.15))',
+        }}
+      />
+      <div className="relative max-w-7xl mx-auto px-4">
+        <h2 className="text-4xl md:text-5xl font-bold text-center text-white mb-4">
+          Our Process
+        </h2>
+        <p className="text-center text-lg text-white/90 mb-16">
+          Here is how we do it
+        </p>
+        <div className="grid md:grid-cols-3 gap-8">
+          {[
+            {
+              num: '1',
+              title: 'PLAN',
+              desc: 'Align on goals, audiences, channels, pricing, and promotions. We build a realistic roadmap that connects effort to outcomes.',
+            },
+            {
+              num: '2',
+              title: 'POSITION',
+              desc: 'Optimize listings, content, and creative for discoverability and conversion. Coordinate ads with inventory and seasonality.',
+            },
+            {
+              num: '3',
+              title: 'PROMOTE',
+              desc: 'Run targeted campaigns, analyze cohort behavior, and scale what works. Keep momentum with ongoing tests and clear reporting.',
+            },
+          ].map((step, idx) => (
+            <div
+              key={idx}
+              className="bg-white rounded-xl p-8 text-center shadow-xl ring-1 ring-black/5"
+            >
+              <div
+                className="mx-auto mb-4 flex items-center justify-center h-12 w-12 rounded-full font-bold"
+                style={{
+                  background: BRAND.lightBlue,
+                  color: BRAND.blue,
+                }}
+              >
+                {step.num}
+              </div>
+              <h4
+                className="text-2xl font-extrabold mb-3"
+                style={{ color: BRAND.orange }}
+              >
+                {step.title}
+              </h4>
+              <p className="text-gray-700 leading-relaxed">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  const FAQSection = () => (
+    <section
+      id="faq"
+      className="py-20"
+      style={{
+        background: `linear-gradient(to bottom, ${BRAND.lightBlue}, ${BRAND.lightOrange})`,
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4">
+        <h2
+          className="text-4xl md:text-5xl font-bold text-center mb-16"
+          style={{ color: BRAND.orange }}
+        >
+          F.A.Q
+        </h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {FAQ_CONTENT.map((f, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-lg p-6 hover:shadow-xl transition-all"
+            >
+              <h3
+                className="text-lg font-bold mb-3"
+                style={{ color: BRAND.orange }}
+              >
+                {f.q}
+              </h3>
+              <p className="text-gray-700 text-sm leading-relaxed">{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  const LeadCapture = () => (
+    <section className="py-20 bg-white">
+      <div className="max-w-2xl mx-auto px-4 text-center">
+        <h2
+          className="text-3xl md:text-4xl font-bold mb-8"
+          style={{ color: BRAND.orange }}
+        >
+          Ready to get started?
+        </h2>
+        <p className="text-gray-800 mb-8">
+          Let&apos;s take your brand further, together.
+        </p>
+        <form onSubmit={handleLeadFormSubmit} className="max-w-lg mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-left text-sm font-semibold text-gray-800 mb-2">
+                FIRST NAME
+              </label>
+              <input
+                type="text"
+                name="firstName"
+                value={leadFormData.firstName}
+                onChange={handleLeadFormChange}
+                required
+                className="w-full px-4 py-2 border-2 rounded focus:ring-2 focus:border-transparent text-gray-900"
+                style={{ borderColor: BRAND.orange }}
+              />
+            </div>
+            <div>
+              <label className="block text-left text-sm font-semibold text-gray-800 mb-2">
+                LAST NAME
+              </label>
+              <input
+                type="text"
+                name="lastName"
+                value={leadFormData.lastName}
+                onChange={handleLeadFormChange}
+                required
+                className="w-full px-4 py-2 border-2 rounded focus:ring-2 focus:border-transparent text-gray-900"
+                style={{ borderColor: BRAND.orange }}
+              />
+            </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-left text-sm font-semibold text-gray-800 mb-2">
+              EMAIL
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={leadFormData.email}
+              onChange={handleLeadFormChange}
+              required
+              className="w-full px-4 py-2 border-2 rounded focus:ring-2 focus:border-transparent text-gray-900"
+              style={{ borderColor: BRAND.orange }}
+            />
+          </div>
+          {leadFormStatus && (
+            <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+              {leadFormStatus}
+            </div>
+          )}
+          <button
+            type="submit"
+            className="px-8 py-3 text-white font-semibold rounded transition-all border-2"
+            style={{ backgroundColor: BRAND.blue, borderColor: BRAND.blue }}
+          >
+            SUBMIT
+          </button>
+        </form>
+      </div>
+    </section>
+  );
+
+  const ContactSection = () => (
+    <section
+      id="contact"
+      className="py-20"
+      style={{
+        background: `linear-gradient(to bottom, ${BRAND.lightOrange}, white)`,
+      }}
+    >
+      <div className="max-w-3xl mx-auto px-4">
+        <h2
+          className="text-4xl md:text-5xl font-bold text-center mb-4"
+          style={{ color: BRAND.orange }}
+        >
+          Contact Us
+        </h2>
+        <p className="text-center text-gray-700 text-lg mb-12">
+          We&apos;d love to hear from you! Our team responds to all inquiries
+          within 24 hours.
+        </p>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-lg shadow-2xl p-8"
+        >
+          <div className="mb-6">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Name *
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:border-transparent"
+              placeholder="Your Name"
+              style={{ borderColor: BRAND.orange }}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Phone
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:border-transparent"
+              placeholder="Your Phone Number"
+              style={{ borderColor: BRAND.orange }}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Email *
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:border-transparent"
+              placeholder="your.email@example.com"
+              style={{ borderColor: BRAND.orange }}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Company
+            </label>
+            <input
+              type="text"
+              name="company"
+              value={formData.company}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:border-transparent"
+              placeholder="Your Company Name"
+              style={{ borderColor: BRAND.orange }}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Message *
+            </label>
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleInputChange}
+              required
+              rows={5}
+              className="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:border-transparent"
+              placeholder="Tell us about your project..."
+              style={{ borderColor: BRAND.orange }}
+            />
+          </div>
+          {formStatus && (
+            <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg">
+              {formStatus}
+            </div>
+          )}
+          <button
+            type="submit"
+            className="w-full text-white font-semibold py-3 rounded-lg transition-colors"
+            style={{ backgroundColor: BRAND.blue }}
+          >
+            SEND MESSAGE
+          </button>
+        </form>
+      </div>
+    </section>
+  );
+
+  const Newsletter = () => (
+    <section className="py-14 bg-white">
+      <div className="max-w-4xl mx-auto px-4 text-center">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          Join our newsletter
+        </h3>
+        <p className="text-gray-600 mb-4">
+          Occasional updates with practical insights—no spam.
+        </p>
+        <form
+          onSubmit={handleNewsletterSubmit}
+          className="flex flex-col sm:flex-row gap-3 justify-center"
+        >
+          <input
+            type="email"
+            value={newsletterEmail}
+            onChange={(e) => setNewsletterEmail(e.target.value)}
+            required
+            placeholder="you@company.com"
+            className="w-full sm:w-80 px-4 py-2 border rounded"
+          />
+          <button
+            type="submit"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+          >
+            Subscribe
+          </button>
+        </form>
+        {newsletterStatus && (
+          <div className="mt-3 p-2 bg-green-100 text-green-700 rounded inline-block">
+            {newsletterStatus}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+
+  // -----------------------------
+  // Footer (with adopted large logo sizing)
+  // -----------------------------
+
+  const Footer = () => (
+    <footer className="relative bg-white mt-4">
+      {/* Orange line above footer content */}
+      <div
+        className="absolute top-0 left-0 right-0 h-1.5"
+        style={{ backgroundColor: BRAND.orange, zIndex: 30 }}
+      />
+
+      <div className="relative max-w-7xl mx-auto px-4 pt-3 pb-5 grid md:grid-cols-3 gap-4 items-center">
+        {/* Left: larger cropped logo + text */}
+        <div className="col-span-2 flex flex-col items-start">
+          <div className="w-full max-w-2xl">
+            <LogoImg crop wrapperHeight={100} imageHeight={260} />
+          </div>
+          <p className="text-slate-600 text-sm mt-2">
+            <strong style={{ color: BRAND.orange }}>
+              Choose Smart. Choose Essentials.
+            </strong>
+            <br />
+            We create lasting marketplace success through strategy, advertising,
+            and customer focus.
+          </p>
+        </div>
+
+        {/* Right: links */}
+        <div className="flex flex-col items-end text-sm">
+          <h4
+            className="font-semibold text-lg mb-2"
+            style={{ color: BRAND.orange }}
+          >
+            Company
+          </h4>
+          <ul className="space-y-1 text-blue-700">
+            <li>
+              <button onClick={() => go('about')} className="hover:underline">
+                About
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => go('services')}
+                className="hover:underline"
+              >
+                Services
+              </button>
+            </li>
+            <li>
+              <button onClick={() => go('faq')} className="hover:underline">
+                FAQ
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => go('contact')}
+                className="hover:underline"
+              >
+                Contact Us
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="text-center text-xs text-gray-500 pb-3">
+        © {new Date().getFullYear()} EO ESSENTIALS • Choose Smart. Choose
+        Essentials.
+      </div>
+    </footer>
+  );
+
+  // -----------------------------
+  // Page-level layouts
+  // -----------------------------
+
+  const HomePage = () => (
+    <>
+      <Hero />
+      <AboutBanner />
+      <About />
+      <ServicesSection />
+      <ProcessSection />
+      <FAQSection />
+      <LeadCapture />
+      <ContactSection />
+      <Newsletter />
+    </>
+  );
+
+  const AboutPage = () => (
+    <>
+      <AboutBanner />
+      <About />
+      <LeadCapture />
+    </>
+  );
+
+  const ServicesPage = () => (
+    <>
+      <ServicesSection />
+      <LeadCapture />
+    </>
+  );
+
+  const ProcessPage = () => (
+    <>
+      <ProcessSection />
+      <LeadCapture />
+    </>
+  );
+
+  const FAQPage = () => (
+    <>
+      <FAQSection />
+      <LeadCapture />
+    </>
+  );
+
+  const ContactPage = () => (
+    <>
+      <ContactSection />
+    </>
+  );
+
+  const PageContent = () => {
+    switch (page) {
+      case 'about':
+        return <AboutPage />;
+      case 'services':
+        return <ServicesPage />;
+      case 'process':
+        return <ProcessPage />;
+      case 'faq':
+        return <FAQPage />;
+      case 'contact':
+        return <ContactPage />;
+      case 'home':
+      default:
+        return <HomePage />;
+    }
+  };
+
+  // -----------------------------
+  // Render
+  // -----------------------------
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <PageContent />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
