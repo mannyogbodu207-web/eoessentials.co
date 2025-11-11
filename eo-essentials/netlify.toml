@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Ensure client-side routing works:
+# /about, /services, /faq, etc. should all serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
