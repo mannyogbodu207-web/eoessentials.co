@@ -98,23 +98,24 @@ function LogoImg({ crop = false, header = false, wrapperHeight, imageHeight }: L
   const imgRef = useRef<HTMLImageElement | null>(null);
   const handledRef = useRef(false);
 
-  const baseWrapperHeight = header ? 120 : 80;
-  const baseImageHeight = header ? 110 : 95;
+  const baseWrapperHeight = header ? 140 : 80; // header wrapper taller for legibility
+  const baseImageHeight = header ? 120 : 95;   // header image taller for crispness
 
   const wrapperStyle: React.CSSProperties = {
     overflow: crop ? 'hidden' : 'visible',
     height: wrapperHeight ?? baseWrapperHeight,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: header ? 'flex-start' : 'flex-start',
+    justifyContent: 'flex-start',
   };
 
   const imgStyle: React.CSSProperties = {
-    objectFit: crop ? 'cover' : 'contain',
+    objectFit: crop ? 'contain' : 'contain', // keep entire mark visible for crispness
     objectPosition: 'center',
     height: imageHeight ?? baseImageHeight,
     width: 'auto',
     display: 'block',
+    imageRendering: 'auto',
   };
 
   return (
@@ -186,14 +187,29 @@ export default function EOEssentialsFullSite() {
   const handleLeadFormChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setLeadFormData({ ...leadFormData, [e.target.name]: e.target.value });
 
+  // =============================
+  // MAIL ROUTING (keeps everything else the same UI-wise)
+  // =============================
+  // Both forms will open the user's email client addressed to emmanuel.o@eoessentials.co
+  // with a prefilled subject and body. This is the most portable option without a backend.
+  // If you later add Netlify Forms or a serverless function, you can swap these handlers.
+
+  const openMail = (subject: string, body: string) => {
+    const mailto = `mailto:emmanuel.o@eoessentials.co?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // Use window.open to avoid some popup blockers while staying in-page
+    window.open(mailto, '_self');
+  };
+
   // Contact form -> mailto
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const subject = encodeURIComponent('New Contact Request from EO Essentials Site');
-    const body = encodeURIComponent(
-      `Name: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nCompany: ${formData.company}\nMessage: ${formData.message}`
-    );
-    window.location.href = `mailto:emmanuel.o@eoessentials.co?subject=${subject}&body=${body}`;
+    const subject = 'New Contact Request from EO Essentials Site';
+    const body = `Name: ${formData.name}
+Phone: ${formData.phone}
+Email: ${formData.email}
+Company: ${formData.company}
+Message: ${formData.message}`;
+    openMail(subject, body);
     setFormStatus('Thank you! Your email draft has been opened.');
     setFormData({ name: '', phone: '', email: '', company: '', message: '' });
     setTimeout(() => setFormStatus(''), 5000);
@@ -202,11 +218,11 @@ export default function EOEssentialsFullSite() {
   // Lead form -> mailto
   const handleLeadFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const subject = encodeURIComponent('New Lead Capture from EO Essentials Site');
-    const body = encodeURIComponent(
-      `First Name: ${leadFormData.firstName}\nLast Name: ${leadFormData.lastName}\nEmail: ${leadFormData.email}`
-    );
-    window.location.href = `mailto:emmanuel.o@eoessentials.co?subject=${subject}&body=${body}`;
+    const subject = 'New Lead Capture from EO Essentials Site';
+    const body = `First Name: ${leadFormData.firstName}
+Last Name: ${leadFormData.lastName}
+Email: ${leadFormData.email}`;
+    openMail(subject, body);
     setLeadFormStatus('Thanks for your interest! Your email draft has been opened.');
     setLeadFormData({ firstName: '', lastName: '', email: '' });
     setTimeout(() => setLeadFormStatus(''), 5000);
@@ -220,7 +236,7 @@ export default function EOEssentialsFullSite() {
   };
 
   // -----------------------------
-  // Header (updated logo sizing)
+  // Header (updated logo sizing for crispness & legibility)
   // -----------------------------
 
   const Header = () => (
@@ -232,12 +248,13 @@ export default function EOEssentialsFullSite() {
       />
 
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 pt-4 pb-4 relative z-30">
-        {/* Logo: larger, crisp, left-aligned, light crop */}
+        {/* Logo: larger, crisp, left-aligned, no hard crop so text remains readable */}
         <button
           onClick={() => go('home')}
           className="flex items-center hover:opacity-90 transition-opacity"
+          aria-label="Go to home"
         >
-          <LogoImg header wrapperHeight={140} imageHeight={120} />
+          <LogoImg header wrapperHeight={150} imageHeight={130} />
         </button>
 
         {/* Desktop Nav */}
@@ -274,6 +291,7 @@ export default function EOEssentialsFullSite() {
           className="md:hidden p-2"
           style={{ color: BRAND.orange }}
           onClick={() => setIsMenuOpen((v) => !v)}
+          aria-label="Toggle navigation"
         >
           {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -377,7 +395,7 @@ export default function EOEssentialsFullSite() {
           About Us
         </h2>
         <p className="text-lg md:text-xl text-gray-800 leading-relaxed mb-4">
-          We&apos;re a team of hardworking people who understand the realities of selling online. We solve problems,
+          We\'re a team of hardworking people who understand the realities of selling online. We solve problems,
           find opportunities, and help brands realize their potential through consistent execution.
         </p>
         <p
@@ -390,7 +408,7 @@ export default function EOEssentialsFullSite() {
           className="text-lg md:text-xl font-semibold"
           style={{ color: BRAND.blue }}
         >
-          Let&apos;s make it happen.
+          Let\'s make it happen.
         </p>
       </div>
     </section>
@@ -582,7 +600,7 @@ export default function EOEssentialsFullSite() {
           Ready to get started?
         </h2>
         <p className="text-gray-800 mb-8">
-          Let&apos;s take your brand further, together.
+          Let\'s take your brand further, together.
         </p>
         <form onSubmit={handleLeadFormSubmit} className="max-w-lg mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -662,7 +680,7 @@ export default function EOEssentialsFullSite() {
           Contact Us
         </h2>
         <p className="text-center text-gray-700 text-lg mb-12">
-          We&apos;d love to hear from you! Our team responds to all inquiries
+          We\'d love to hear from you! Our team responds to all inquiries
           within 24 hours.
         </p>
         <form
@@ -955,4 +973,3 @@ export default function EOEssentialsFullSite() {
     </div>
   );
 }
-
